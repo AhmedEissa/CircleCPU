@@ -7,6 +7,14 @@ import javafx.util.Duration;
 
 class CPUCircle extends Circle {
 
+    void changeSize(int x, int y) {
+        if (x < y) {
+            this.increaseCircle(y);
+        } else {
+            this.reduceCircle(y);
+        }
+    }
+
     void reduceCircle(int y){
         final Timeline animation = new Timeline(
                 new KeyFrame(Duration.seconds(.01),

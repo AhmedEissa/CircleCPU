@@ -2,6 +2,7 @@ package sample;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -10,9 +11,9 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import oshi.SystemInfo;
 import oshi.hardware.HardwareAbstractionLayer;
+import protocol.TextProtocol;
 
-
-import java.sql.SQLException;
+import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -55,34 +56,40 @@ public class Main extends Application {
         startTask(circle1);
     }
 
-    private void startTask(CPUCircle cpuCircle) {
-        DBManager dbManager = new DBManager();
+
+    private void startTask(CPUCircle cpuCircle) throws IOException {
+        TCPSocket tcpSocket = new TCPSocket();
         Timer timer = new Timer(true);
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 int x = (int) cpuCircle.getRadius();
                 int y = getCPUUsage();
-                insertValue(dbManager, y);
-                updateLabel(dbManager);
-                cpuCircle.changeSize(x, y);
+
+                Platform.runLater(() -> {
+                    cpuCircle.changeSize(x, y);
+                });
+                try {
+                    insertValue(y,tcpSocket);
+                    updateLabel(tcpSocket);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }, 0, 1000);
     }
 
-    private void insertValue(DBManager dbManager, int y) {
-        try {
-            dbManager.insertCPUUtil(y);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    private void insertValue(int y,TCPSocket tcpSocket) throws IOException {
+        TextProtocol textProtocol = new TextProtocol("saveCPUUtil",y);
+        tcpSocket.sendDataToServer(textProtocol);
     }
 
-    private void updateLabel(DBManager dbManager) {
+    private void updateLabel(TCPSocket tcpSocket) {
         Platform.runLater(() -> {
             try {
-                cpuUtil.setText(dbManager.receiveLastRecordInserted());
-            } catch (SQLException e) {
+                TextProtocol textProtocol = tcpSocket.receiveDataFromServer();
+                cpuUtil.setText(""+textProtocol.getData());
+            } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
         });

@@ -1,4 +1,4 @@
-package sample;
+package server;
 
 public interface DBCredentials {
 

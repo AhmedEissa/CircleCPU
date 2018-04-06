@@ -1,4 +1,4 @@
-package sample;
+package server;
 
 import java.sql.*;
 
@@ -15,18 +15,18 @@ public class DBManager implements DBCredentials {
         ps.setInt(1, util);
         ps.executeUpdate();
         ps.close();
-
+        con.close();
     }
 
 
-    String receiveLastRecordInserted() throws SQLException {
-        String cpuUtil = "";
+    int receiveLastRecordInserted() throws SQLException {
+        int cpuUtil = 0;
         Connection con = getConnection();
         Statement stmt = con.createStatement();
         String query = "SELECT * FROM CPU ORDER BY id DESC LIMIT 1";
         ResultSet rs = stmt.executeQuery(query);
         while (rs.next()) {
-            cpuUtil = rs.getString("value");
+            cpuUtil = Integer.parseInt(rs.getString("value"));
         }
         rs.close();
         stmt.close();
